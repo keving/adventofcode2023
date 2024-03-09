@@ -1,7 +1,12 @@
 module Main where
 
+import qualified Data.Map as Map
+import Data.Either (fromRight)
 import Data.List (isPrefixOf, tails)
 import Data.Maybe (mapMaybe)
+import Text.Parsec
+
+-- Day 1
 
 numbers :: [(String, Int)]
 numbers = [(show n, n) | n <- [0..9]] ++
@@ -30,5 +35,46 @@ day1 = do
        let cv = sum $ map toCV $ words inp
        print cv
 
+-- Day 2
+
+data Colors = Red | Green | Blue
+
+data Sample = Sample {reds::Int, greens::Int, blues::Int} deriving Show
+
+data Game = Game {gameid::Int, samples::[Sample]} deriving Show
+
+bag :: Sample
+bag = Sample {reds=12, greens=13, blues=14}
+
+parseGame :: Parsec String () Game
+parseGame = do
+  _ <-  string "Game"
+  spaces
+  gid <- many1 digit
+  _ <- char ':'
+  spaces
+  gsamplesMapList <- sepBy (
+    do
+      gsample <- sepBy (
+        do
+          n <- many1 digit
+          spaces
+          c <- many1 letter
+          return (c, read n))
+        (spaces >> char ',' >> spaces)
+      return $ Map.fromList gsample)
+    (spaces >> char ';' >> spaces)
+  return Game {gameid=read gid,
+                samples=map (\m -> Sample {reds=Map.findWithDefault 0 "red" m,
+                                           greens=Map.findWithDefault 0 "green" m,
+                                           blues=Map.findWithDefault 0 "blue" m
+                                          }) gsamplesMapList}
+
+day2 :: IO ()
+day2 = do
+  inp <- getContents
+  let games = map (fromRight (Game 0 []). parse parseGame "(input)") $ lines inp
+  print games
+
 main :: IO ()
-main = day1
+main = day2
