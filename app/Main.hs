@@ -75,7 +75,8 @@ day2 = do
   inp <- getContents
   let games = map (fromRight (Game 0 []). parse parseGame "(input)") $ lines inp
   print $ sum [gameid g |
-                g <- filter (all (\s -> reds s <= reds bag && greens s <= greens bag && blues s <= blues bag) . samples) games] 
+                g <- filter (all (\s -> reds s <= reds bag && greens s <= greens bag && blues s <= blues bag) . samples) games]
+  print $ sum $ map ((\s -> reds s * greens s * blues s) . (foldr (\(Sample mr mg mb) (Sample r g b) -> Sample (mr `max` r) (mg `max` g) (mb `max` b)) (Sample 0 0 0) . samples)) games
 
 main :: IO ()
 main = day2
