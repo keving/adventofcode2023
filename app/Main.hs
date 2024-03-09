@@ -74,7 +74,8 @@ day2 :: IO ()
 day2 = do
   inp <- getContents
   let games = map (fromRight (Game 0 []). parse parseGame "(input)") $ lines inp
-  print games
+  print $ sum [gameid g |
+                g <- filter (all (\s -> reds s <= reds bag && greens s <= greens bag && blues s <= blues bag) . samples) games] 
 
 main :: IO ()
 main = day2
