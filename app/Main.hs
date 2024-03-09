@@ -65,10 +65,10 @@ parseGame = do
       return $ Map.fromList gsample)
     (spaces >> char ';' >> spaces)
   return Game {gameid=read gid,
-                samples=map (\m -> Sample {reds=Map.findWithDefault 0 "red" m,
-                                           greens=Map.findWithDefault 0 "green" m,
-                                           blues=Map.findWithDefault 0 "blue" m
-                                          }) gsamplesMapList}
+               samples=map (\m -> Sample {reds=Map.findWithDefault 0 "red" m,
+                                          greens=Map.findWithDefault 0 "green" m,
+                                          blues=Map.findWithDefault 0 "blue" m
+                                         }) gsamplesMapList}
 
 day2 :: IO ()
 day2 = do
