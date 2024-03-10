@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module Main where
 
 import qualified Data.Map as Map
@@ -83,6 +84,7 @@ day2 = do
 
 day3 :: IO ()
 day3 = do
+  -- Part 1
   inp <- getContents
   let ls = lines inp
   let els = zip [0..] $ [replicate (length (head ls) + 2) '.'] ++
@@ -95,6 +97,14 @@ day3 = do
                                           [(n+1,p) | p <- [(s-1)..(s+l)]]))
                      augmatches
   print $ sum $ map fst $ filter (\(_,checks) -> any (\(r,c) -> snd (els!!r)!!c `notElem` '.':['0'..'9']) checks) tochecks
+  -- Part 2
+  let starmatches = concatMap (\(n, s) -> map ((n,) . fst) (getAllMatches (s =~ "\\*") :: [(Int, Int)])) els
+  let gearns = map (\(r,c) -> [d | (n, d, (s,l)) <- augmatches, (n,s,l) `overlaps` (r,c)]) starmatches
+  print $ foldr (\xs acc -> acc + mulpairs xs) 0 gearns
+  where overlaps (row,start,len) (starrow,starcol) =
+          starrow `elem` [(row-1)..(row+1)] && starcol `elem` [(start-1)..(start+len)]
+        mulpairs [x, y] = x*y
+        mulpairs _ = 0
 
 main :: IO ()
 main = day3
