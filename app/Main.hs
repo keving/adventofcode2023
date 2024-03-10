@@ -5,6 +5,7 @@ import Data.Either (fromRight)
 import Data.List (isPrefixOf, tails)
 import Data.Maybe (mapMaybe)
 import Text.Parsec
+import Text.Regex.TDFA
 
 -- Day 1
 
@@ -78,5 +79,22 @@ day2 = do
                 g <- filter (all (\s -> reds s <= reds bag && greens s <= greens bag && blues s <= blues bag) . samples) games]
   print $ sum $ map ((\s -> reds s * greens s * blues s) . (foldr (\(Sample mr mg mb) (Sample r g b) -> Sample (mr `max` r) (mg `max` g) (mb `max` b)) (Sample 0 0 0) . samples)) games
 
+-- Day 3
+
+day3 :: IO ()
+day3 = do
+  inp <- getContents
+  let ls = lines inp
+  let els = zip [0..] $ [replicate (length (head ls) + 2) '.'] ++
+                        map (\l -> ['.'] ++ l ++ ['.']) ls ++
+                        [replicate (length (head ls) + 2) '.']
+  let matches = map (\(n, s) -> (n, getAllMatches (s =~ "([0-9]+)") :: [(Int, Int)])) els
+  let augmatches = concatMap (\(n, ms) -> [(n, read (take l $ drop s (snd $ els!!n))::Int, m) | m@(s,l) <- ms]) matches
+  let tochecks = map (\(n, v, (s,l)) -> (v, [(n-1,p) | p <- [(s-1)..(s+l)]] ++
+                                          [(n, s-1), (n, s+l)] ++
+                                          [(n+1,p) | p <- [(s-1)..(s+l)]]))
+                     augmatches
+  print $ sum $ map fst $ filter (\(_,checks) -> any (\(r,c) -> snd (els!!r)!!c `notElem` '.':['0'..'9']) checks) tochecks
+
 main :: IO ()
-main = day2
+main = day3
