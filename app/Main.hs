@@ -123,9 +123,14 @@ parseCard = do
 day4 :: IO ()
 day4 = do
   inp <- getContents
-  let cards = map (fromRight (Card 0 [] []). parse parseCard "(input)") . lines $ inp
-  print $ foldr ((\w a -> a + if w == 0 then 0 else 2^(w-1)) . (\(Card _ ws ds) -> length $ filter (`elem` ws) ds)) (0::Int) cards
-  putStrLn "Done"
+  let cardwins = map ((\(Card i ws ds) -> (i, length $ filter (`elem` ws) ds)) . fromRight (Card 0 [] []) . parse parseCard "(input)") $ lines inp
+  print $ foldr (\(_, w) a -> a + if w == 0 then 0 else 2^(w-1)) (0::Int) cardwins
+  print $ length $ loop (\xs -> concat [take w $ drop i cardwins | (i, w) <- xs]) cardwins
+  where
+    loop :: ([a] -> [a]) -> [a] -> [a]
+    loop _ [] = []
+    loop f xs = xs ++ loop f (f xs)
+
 
 main :: IO ()
 main = day4
