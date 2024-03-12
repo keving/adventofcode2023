@@ -1,9 +1,11 @@
 {-# LANGUAGE TupleSections #-}
 module Main where
 
-import qualified Data.Map as Map
+import Control.Monad (void)
 import Data.Either (fromRight)
+import Data.Functor ((<&>))
 import Data.List (isPrefixOf, tails)
+import qualified Data.Map as Map
 import Data.Maybe (mapMaybe)
 import Text.Parsec
 import Text.Regex.TDFA
@@ -106,5 +108,24 @@ day3 = do
         mulpairs [x, y] = x*y
         mulpairs _ = 0
 
+-- Day 4
+
+data Card = Card {cardid::Int, winners::[Int], draws::[Int]} deriving Show
+
+parseCard :: Parsec String () Card
+parseCard = do
+  pid <- string "Card" <* spaces *> many1 digit <* char ':' <* spaces <&> read
+  pwinners <- many1 (many1 digit <* spaces <&> read)
+  void $ char '|' >> spaces
+  pdraws <- many1 (many1 digit <* spaces <&> read)
+  return Card {cardid=pid, winners=pwinners, draws=pdraws}
+
+day4 :: IO ()
+day4 = do
+  inp <- getContents
+  let cards = map (fromRight (Card 0 [] []). parse parseCard "(input)") . lines $ inp
+  print $ foldr ((\w a -> a + if w == 0 then 0 else 2^(w-1)) . (\(Card _ ws ds) -> length $ filter (`elem` ws) ds)) (0::Int) cards
+  putStrLn "Done"
+
 main :: IO ()
-main = day3
+main = day4
