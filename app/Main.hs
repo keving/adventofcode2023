@@ -5,6 +5,7 @@ import Control.Monad (void)
 import Data.Either (fromRight)
 import Data.Functor ((<&>))
 import Data.List (isPrefixOf, tails)
+import Data.Map ((!))
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe)
 import Text.Parsec
@@ -131,26 +132,36 @@ day4 = do
     loop _ [] = []
     loop f xs = xs ++ loop f (f xs)
 
-parseMaps :: Parsec String () ([Int], [(String, String, [(Int, Int, Int)])])
-parseMaps = do
+parseSeedMaps :: Parsec String () ([Int], Map.Map String (String, Int -> Int))
+parseSeedMaps = do
   seeds <- string "seeds:" <* spaces *> many1 (many1 digit <* spaces <&> read)
   maps <- many $ do
     fromw <- many1 letter <* string "-to-"
     tow <- many1 letter <* spaces <* string "map:" <* spaces
     map_ranges <- many $ do
       dest_start <- many1 digit <* spaces <&> read
-      range_start <- many1 digit <* spaces <&> read
+      src_start <- many1 digit <* spaces <&> read
       len <- many1 digit <* spaces <&> read
-      return (dest_start, range_start, len)
-    return (fromw, tow, map_ranges)
-  return (seeds, maps)
+      return (dest_start, src_start, len)
+    return (fromw, (tow, mk_map map_ranges))
+  return (seeds, Map.fromList maps)
+  where
+    mk_map :: [(Int, Int, Int)] -> Int -> Int
+    mk_map [] x = x
+    mk_map ((d,s,l):ys) x | x >= s && x < s+l = d + x - s
+                          | otherwise = mk_map ys x
 
 day5:: IO ()
 day5 = do
   inp <- getContents
-  let seeds_maps = parse parseMaps "(input)" inp
-  print seeds_maps
+  let (seeds, maps) = fromRight ([], Map.empty) $ parse parseSeedMaps "(input)" inp
+  print $ minimum $ map (get_location maps "seed") seeds
   print "Done"
+  where
+    get_location :: Map.Map String (String, Int -> Int) -> String -> Int -> Int
+    get_location _ "location" n = n
+    get_location m t n = get_location m d (f n)
+      where (d,f) = m ! t
 
 main :: IO ()
 main = day5
