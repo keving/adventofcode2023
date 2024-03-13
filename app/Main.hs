@@ -131,6 +131,26 @@ day4 = do
     loop _ [] = []
     loop f xs = xs ++ loop f (f xs)
 
+parseMaps :: Parsec String () ([Int], [(String, String, [(Int, Int, Int)])])
+parseMaps = do
+  seeds <- string "seeds:" <* spaces *> many1 (many1 digit <* spaces <&> read)
+  maps <- many $ do
+    fromw <- many1 letter <* string "-to-"
+    tow <- many1 letter <* spaces <* string "map:" <* spaces
+    map_ranges <- many $ do
+      dest_start <- many1 digit <* spaces <&> read
+      range_start <- many1 digit <* spaces <&> read
+      len <- many1 digit <* spaces <&> read
+      return (dest_start, range_start, len)
+    return (fromw, tow, map_ranges)
+  return (seeds, maps)
+
+day5:: IO ()
+day5 = do
+  inp <- getContents
+  let seeds_maps = parse parseMaps "(input)" inp
+  print seeds_maps
+  print "Done"
 
 main :: IO ()
-main = day4
+main = day5
