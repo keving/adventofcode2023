@@ -163,5 +163,22 @@ day5 = do
     get_location m t n = get_location m d (f n)
       where (d,f) = m ! t
 
+-- Day 6
+
+parseRaceRounds :: Parsec String () [(Int, Int)]
+parseRaceRounds = do
+  times <- string "Time:" <* spaces *> many1 (many1 digit <* spaces <&> read)
+  distances <- string "Distance:" <* spaces *> many1 (many1 digit <* spaces <&> read)
+  return $ zip times distances
+
+day6 :: IO ()
+day6 = do
+  inp <- getContents
+  let rounds = fromRight [] $ parse parseRaceRounds "(input)" inp
+  print $ product $ map (length . (uncurry calc_winning_distances)) rounds
+  where
+    calc_winning_distances :: Int -> Int -> [Int]
+    calc_winning_distances t d = [(t-at)*at | at <- [0..t], (t-at)*at > d]
+
 main :: IO ()
-main = day5
+main = day6
