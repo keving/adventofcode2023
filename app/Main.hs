@@ -132,9 +132,9 @@ day4 = do
     loop _ [] = []
     loop f xs = xs ++ loop f (f xs)
 
-parseSeedMaps :: Parsec String () ([Int], Map.Map String (String, Int -> Int))
+parseSeedMaps :: Parsec String () ([[Int]], Map.Map String (String, Int -> Int))
 parseSeedMaps = do
-  seeds <- string "seeds:" <* spaces *> many1 (many1 digit <* spaces <&> read)
+  seeds <- string "seeds:" <* spaces *> many1 (count 2 $ many1 digit <* spaces <&> read)
   maps <- many $ do
     fromw <- many1 letter <* string "-to-"
     tow <- many1 letter <* spaces <* string "map:" <* spaces
@@ -155,7 +155,7 @@ day5:: IO ()
 day5 = do
   inp <- getContents
   let (seeds, maps) = fromRight ([], Map.empty) $ parse parseSeedMaps "(input)" inp
-  print $ minimum $ map (get_location maps "seed") seeds
+  print $ minimum [get_location maps "seed" x | [s,l] <- seeds, x <- [s..s+l]]
   print "Done"
   where
     get_location :: Map.Map String (String, Int -> Int) -> String -> Int -> Int
