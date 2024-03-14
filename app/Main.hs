@@ -165,17 +165,17 @@ day5 = do
 
 -- Day 6
 
-parseRaceRounds :: Parsec String () [(Int, Int)]
+parseRaceRounds :: Parsec String () (Int, Int)
 parseRaceRounds = do
-  times <- string "Time:" <* spaces *> many1 (many1 digit <* spaces <&> read)
-  distances <- string "Distance:" <* spaces *> many1 (many1 digit <* spaces <&> read)
-  return $ zip times distances
+  times <- string "Time:" <* spaces *> many1 (many1 digit <* spaces)
+  distances <- string "Distance:" <* spaces *> many1 (many1 digit <* spaces)
+  return (read $ concat times, read $ concat distances)
 
 day6 :: IO ()
 day6 = do
   inp <- getContents
-  let rounds = fromRight [] $ parse parseRaceRounds "(input)" inp
-  print $ product $ map (length . (uncurry calc_winning_distances)) rounds
+  let (t, d) = fromRight (0,0) $ parse parseRaceRounds "(input)" inp
+  print $ length $ calc_winning_distances t d
   where
     calc_winning_distances :: Int -> Int -> [Int]
     calc_winning_distances t d = [(t-at)*at | at <- [0..t], (t-at)*at > d]
