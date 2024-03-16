@@ -180,5 +180,51 @@ day6 = do
     calc_winning_distances :: Int -> Int -> [Int]
     calc_winning_distances t d = [(t-at)*at | at <- [0..t], (t-at)*at > d]
 
+-- Day 7
+
+
+data CamelCard = Ace | King | Queen | Jack | Ten | NonPicture Int deriving (Eq, Show)
+
+cardRank :: CamelCard -> Int
+cardRank Ace = 14
+cardRank King = 13
+cardRank Queen = 12
+cardRank Jack = 11
+cardRank Ten = 10
+cardRank (NonPicture v) = v
+
+readCard :: CamelCard -> Int
+readCard Ace = 14
+readCard King = 13
+readCard Queen = 12
+readCard Jack = 11
+readCard Ten = 10
+readCard (NonPicture v) = v
+
+
+instance Ord (CamelCard) where x <= y = cardRank x <= cardRank y
+
+instance Read (CamelCard)
+  where
+    readsPrec _ ('A':xs) = [(Ace, xs)]
+    readsPrec _ ('K':xs) = [(King, xs)]
+    readsPrec _ ('Q':xs) = [(Queen, xs)]
+    readsPrec _ ('J':xs) = [(Jack, xs)]
+    readsPrec _ ('T':xs) = [(Ten, xs)]
+    readsPrec _ (x:xs) = [(NonPicture $ read [x], xs)]
+    readsPrec _ [] = []
+
+
+parseHands :: Parsec String () [([CamelCard], Int)]
+parseHands = many $ do
+  hand <- count 5 alphaNum <* spaces <&> map (read . (:[]))
+  bid <- many1 digit <* spaces <&> read
+  return (hand, bid)
+
+day7 :: IO ()
+day7 = do
+  inp <- getContents
+  print $ fromRight [] $ parse parseHands "(input)" inp
+
 main :: IO ()
-main = day6
+main = day7
