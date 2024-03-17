@@ -4,7 +4,7 @@ module Main where
 import Control.Monad (void)
 import Data.Either (fromRight)
 import Data.Functor ((<&>))
-import Data.List (isPrefixOf, tails)
+import Data.List (isPrefixOf, tails, singleton, group, sort, sortBy)
 import Data.Map ((!))
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe)
@@ -184,6 +184,7 @@ day6 = do
 
 
 data CamelCard = Ace | King | Queen | Jack | Ten | NonPicture Int deriving (Eq, Show)
+data CamelHand = High | OnePair | TwoPair | ThreeOfAKind | FullHouse | FourOfAKind | FiveOfAKind deriving (Eq, Ord, Show)
 
 cardRank :: CamelCard -> Int
 cardRank Ace = 14
@@ -214,17 +215,33 @@ instance Read (CamelCard)
     readsPrec _ (x:xs) = [(NonPicture $ read [x], xs)]
     readsPrec _ [] = []
 
+camelType :: [CamelCard] -> CamelHand
+camelType = getType . reverse . sort . (map length) . group . sort
+  where
+    getType :: [Int] -> CamelHand
+    getType (5:_) = FiveOfAKind
+    getType (4:_) = FourOfAKind
+    getType (3:2:_) = FullHouse
+    getType (3:_) = ThreeOfAKind
+    getType (2:2:_) = TwoPair
+    getType (2:_) = OnePair
+    getType _ = High
 
 parseHands :: Parsec String () [([CamelCard], Int)]
 parseHands = many $ do
-  hand <- count 5 alphaNum <* spaces <&> map (read . (:[]))
+  hand <- count 5 alphaNum <* spaces <&> map (read . singleton)
   bid <- many1 digit <* spaces <&> read
   return (hand, bid)
 
 day7 :: IO ()
 day7 = do
   inp <- getContents
-  print $ fromRight [] $ parse parseHands "(input)" inp
+  let hands = sortBy orderHands $ fromRight [] $ parse parseHands "(input)" inp
+  print $ sum $  zipWith (*) [1..length hands] (map snd hands)
+  where
+    orderHands :: ([CamelCard], Int) -> ([CamelCard], Int) -> Ordering
+    orderHands (xs,_) (ys,_) | camelType xs == camelType ys = compare xs ys
+                             | otherwise = compare (camelType xs) (camelType ys)
 
 main :: IO ()
 main = day7
