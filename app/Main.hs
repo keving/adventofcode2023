@@ -4,10 +4,11 @@ module Main where
 import Control.Monad (void)
 import Data.Either (fromRight)
 import Data.Functor ((<&>))
-import Data.List (isPrefixOf, tails, singleton, group, sort, sortBy)
+import Data.List (isPrefixOf, tails, singleton, group, sort, sortBy, sortOn)
 import Data.Map ((!))
 import qualified Data.Map as Map
 import Data.Maybe (mapMaybe)
+import Data.Ord
 import Text.Parsec
 import Text.Regex.TDFA
 
@@ -190,22 +191,14 @@ cardRank :: CamelCard -> Int
 cardRank Ace = 14
 cardRank King = 13
 cardRank Queen = 12
-cardRank Jack = 11
+-- Jacks are Jokers, but worth least.
+cardRank Jack = 1
 cardRank Ten = 10
 cardRank (NonPicture v) = v
 
-readCard :: CamelCard -> Int
-readCard Ace = 14
-readCard King = 13
-readCard Queen = 12
-readCard Jack = 11
-readCard Ten = 10
-readCard (NonPicture v) = v
+instance Ord CamelCard where x <= y = cardRank x <= cardRank y
 
-
-instance Ord (CamelCard) where x <= y = cardRank x <= cardRank y
-
-instance Read (CamelCard)
+instance Read CamelCard
   where
     readsPrec _ ('A':xs) = [(Ace, xs)]
     readsPrec _ ('K':xs) = [(King, xs)]
@@ -216,7 +209,7 @@ instance Read (CamelCard)
     readsPrec _ [] = []
 
 camelType :: [CamelCard] -> CamelHand
-camelType = getType . reverse . sort . (map length) . group . sort
+camelType = getType . sortBy (comparing Data.Ord.Down) . map length . group . sort
   where
     getType :: [Int] -> CamelHand
     getType (5:_) = FiveOfAKind
@@ -236,12 +229,22 @@ parseHands = many $ do
 day7 :: IO ()
 day7 = do
   inp <- getContents
-  let hands = sortBy orderHands $ fromRight [] $ parse parseHands "(input)" inp
-  print $ sum $  zipWith (*) [1..length hands] (map snd hands)
+  let hands = sortBy orderHands $ map addJokerHands $ fromRight [] $ parse parseHands "(input)" inp
+  print hands
+  print $ sum $  zipWith (*) [1..length hands] (map (\(_,_,x) -> x) hands)
   where
-    orderHands :: ([CamelCard], Int) -> ([CamelCard], Int) -> Ordering
-    orderHands (xs,_) (ys,_) | camelType xs == camelType ys = compare xs ys
-                             | otherwise = compare (camelType xs) (camelType ys)
+    -- Convert Jokers to the card with most representatives.
+    addJokerHands :: ([CamelCard], Int) -> ([CamelCard], [CamelCard], Int)
+    addJokerHands (h,b) = (h, map (\c -> if c == Jack then top_card else c) h, b)
+      where
+        top_card :: CamelCard
+        top_card = if null c then Ace else head $ last c
+          where
+            c :: [[CamelCard]]
+            c = sortOn length . group $ sort $ filter (/= Jack) h
+    orderHands :: ([CamelCard], [CamelCard], Int) -> ([CamelCard], [CamelCard], Int) -> Ordering
+    orderHands (xs,jxs,_) (ys,jys,_) | camelType jxs == camelType jys = compare xs ys
+                             | otherwise = compare (camelType jxs) (camelType jys)
 
 main :: IO ()
 main = day7
