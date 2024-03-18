@@ -183,7 +183,6 @@ day6 = do
 
 -- Day 7
 
-
 data CamelCard = Ace | King | Queen | Jack | Ten | NonPicture Int deriving (Eq, Show)
 data CamelHand = High | OnePair | TwoPair | ThreeOfAKind | FullHouse | FourOfAKind | FiveOfAKind deriving (Eq, Ord, Show)
 
@@ -246,5 +245,27 @@ day7 = do
     orderHands (xs,jxs,_) (ys,jys,_) | camelType jxs == camelType jys = compare xs ys
                              | otherwise = compare (camelType jxs) (camelType jys)
 
+-- Day 8
+
+parseRoute :: Parsec String () ([Char], Map.Map String (Map.Map Char String))
+parseRoute = do
+  route <- spaces *> many1 letter <* spaces
+  graph <- many1 $ do
+    node <- many1 alphaNum <* spaces <* char '=' <* spaces
+    dirs <- char '(' *>  spaces *> sepBy (many1 alphaNum <* spaces) (char ',' >> spaces) <* char ')' <* spaces
+    return (node, Map.fromList (zip "LR" dirs))
+  return (cycle route, Map.fromList graph)
+
+
+day8 :: IO ()
+day8 = do
+  inp <- getContents
+  let (path, graph) = fromRight ([], Map.empty) $ parse parseRoute "(input)" inp
+  print $ subtract 1 . length $ travel graph ["AAA"] path
+  where
+    travel :: Map.Map String (Map.Map Char String) -> [String] -> String -> [String]
+    travel _ rs@("ZZZ":_) _ = rs
+    travel g rs@(r:_) (p:ps) = travel g ((g!r)!p:rs) ps
+
 main :: IO ()
-main = day7
+main = day8
