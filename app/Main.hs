@@ -1,4 +1,5 @@
 {-# LANGUAGE TupleSections #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 module Main where
 
 import Control.Monad (void)
@@ -262,10 +263,28 @@ day8 = do
   inp <- getContents
   let (path, graph) = fromRight ([], Map.empty) $ parse parseRoute "(input)" inp
   print $ subtract 1 . length $ travel graph ["AAA"] path
+  let cycles = map snd $ Map.elems . snd $ ghost_travel graph (Map.fromList $ map (, (0,0)) $ filter ((=='A') . last) $ Map.keys graph) path 500000 0
+  print cycles
+  print $ collection_lcm $ map toInteger cycles
   where
     travel :: Map.Map String (Map.Map Char String) -> [String] -> String -> [String]
     travel _ rs@("ZZZ":_) _ = rs
     travel g rs@(r:_) (p:ps) = travel g ((g!r)!p:rs) ps
+
+    collection_lcm :: [Integer] -> Integer
+    collection_lcm = foldl1 lcm
+
+    -- graph, current state, remaining path, step limit, step length
+    ghost_travel :: Map.Map String (Map.Map Char String) -> Map.Map String (Int, Int) -> String -> Int -> Int -> (Int, Map.Map String (Int, Int))
+    ghost_travel _ rs _ 0 n = (n, rs)
+    ghost_travel _ rs _ _ n | is_finished = (n, rs)
+      where
+        is_finished :: Bool
+        is_finished = all (\(_,l) -> l > 0) $ Map.elems rs
+    ghost_travel g rs (p:ps) l n = ghost_travel g move ps (l-1) (n+1)
+      where
+        move :: Map.Map String (Int, Int)
+        move = Map.fromList $ map (\(k,(c,cl)) -> (g!k!p, if last (g!k!p) == 'Z' then (0, c+1) else (c+1, cl))) $ Map.toList rs
 
 main :: IO ()
 main = day8
