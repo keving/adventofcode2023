@@ -11,6 +11,7 @@ import qualified Data.Map as Map
 import Data.Maybe (mapMaybe)
 import Data.Ord
 import Text.Parsec
+import Text.Parsec.Number
 import Text.Regex.TDFA
 
 -- Day 1
@@ -286,5 +287,19 @@ day8 = do
         move :: Map.Map String (Int, Int)
         move = Map.fromList $ map (\(k,(c,cl)) -> (g!k!p, if last (g!k!p) == 'Z' then (0, c+1) else (c+1, cl))) $ Map.toList rs
 
+day9 :: IO ()
+day9 = do
+  inp <- getContents
+  let seqs = map (reverse . fromRight []. parse parseInts "(input)") $ lines inp
+  print $ map (takeWhile (not . all (==0)) . iterate diffs) seqs
+  print $ sum $ map head $ concatMap (takeWhile (not . all (==0)) . iterate diffs) seqs
+  where
+    parseInts :: Parsec String () [Int]
+    parseInts = many1 $ do int <* spaces
+    diffs :: [Int] -> [Int]
+    diffs (x1:x2:xs) = (x1-x2):diffs (x2:xs)
+    diffs _ = []
+
+
 main :: IO ()
-main = day8
+main = day9
